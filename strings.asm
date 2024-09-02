@@ -47,8 +47,10 @@ L0383:
     LDA $FF
     CMP #$18
     BNE L0398
+    LDA #$00
     STA $FF
     TYA
+    PHA
 L0391:
     JSR $FFE4
     BEQ L0391
