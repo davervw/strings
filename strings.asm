@@ -6,66 +6,66 @@ STRINGS:
     STA $FC
     LDY #$00
     STY $FF
-L0348:
+PROGRAM_LOOP:
     LDA ($FB),Y
     INY
     STA $FD
     LDA ($FB),Y
     STA $FE
     ORA $FD
-    BEQ L03A7
+    BEQ STRINGS_EXIT
     LDY #$03
-L0357:
+LINE_LOOP:
     INY
-L0358:    
+FIND_STRING:
     LDA ($FB),Y
-    BEQ L039B
+    BEQ NEXT_LINE
     CMP #$22
-    BEQ L0363
+    BEQ FOUND_STRING
     INY
-    BNE L0358
-L0363:
+    BNE FIND_STRING
+FOUND_STRING
     LDA $C7
     EOR #$12
     STA $C7
     INY
-L036A:    
+STRING_LOOP:
     LDA #$01
     STA $D4
     STA $D8
     LDA ($FB),Y
-    BEQ L039B
+    BEQ NEXT_LINE
     CMP #$22
-    BEQ L0357
+    BEQ LINE_LOOP
     JSR $FFD2
     LDA $D3
-    BEQ L0383
+    BEQ CHECK_PAUSE
     CMP #$28
-    BNE L0398
-L0383:    
+    BNE NOPAGE
+CHECK_PAUSE:
     INC $FF
     LDA $FF
     CMP #$18
-    BNE L0398
+    BNE NOPAGE
     LDA #$00
     STA $FF
     TYA
     PHA
-L0391:
+PAUSE_PAGE:
     JSR $FFE4
-    BEQ L0391
+    BEQ PAUSE_PAGE
     PLA
     TAY
-L0398:    
+NOPAGE:
     INY
-    BNE L036A
-L039B:
+    BNE STRING_LOOP
+NEXT_LINE:
     LDA $FD
     STA $FB
     LDA $FE
     STA $FC
     LDY #$00
-    BEQ L0348
-L03A7:
+    BEQ PROGRAM_LOOP
+STRINGS_EXIT:
     LDA #$0D
     JMP $FFD2
