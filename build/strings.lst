@@ -45,18 +45,18 @@
     43  034d b1fb                   lda ($fb),y ; next line ptr (hi)
     44  034f 85fe                   sta $fe
     45  0351 05fd                   ora $fd
-    46  0353 f052                   beq strings_exit
-    47  0355 a003                   ldy #$03
+    46  0353 f04c                   beq strings_exit
+    47  0355 a003                   ldy #$03 ; nearly advance past pointer and line number
     48                          line_loop:
     49  0357 c8                     iny
     50                          find_string:
     51  0358 b1fb                   lda ($fb),y ; get token
-    52  035a f03f                   beq next_line
+    52  035a f039                   beq next_line
     53  035c c922                   cmp #34 ; quote
     54  035e f003                   beq found_string
     55  0360 c8                     iny
     56  0361 d0f5                   bne find_string
-    57                          found_string
+    57                          found_string:
     58  0363 a5c7                   lda $c7 ; get reverse
     59  0365 4912                   eor #18 ; toggle
     60  0367 85c7                   sta $c7 ; store reverse
@@ -66,38 +66,58 @@
     64  036c 85d4                   sta $d4 ; quote mode on
     65  036e 85d8                   sta $d8 ; inserts
     66  0370 b1fb                   lda ($fb),y ; get token
-    67  0372 f027                   beq next_line
-    68  0374 c922                   cmp #34 ; quote
-    69  0376 f0df                   beq line_loop
-    70  0378 20d2ff                 jsr $ffd2
-    71  037b a5d3                   lda $d3 ; cursor column
-    72  037d f004                   beq check_pause
-    73  037f c928                   cmp #40 ; cursor column
-    74  0381 d015                   bne nopage
-    75                          check_pause:
-    76  0383 e6ff                   inc $ff
-    77  0385 a5ff                   lda $ff
-    78  0387 c918                   cmp #24 ; lines on screen minus one
-    79  0389 d00d                   bne nopage
-    80  038b a900                   lda #$00
-    81  038d 85ff                   sta $ff ; reset lines displayed
-    82  038f 98                     tya
-    83  0390 48                     pha
-    84                          pause_page:
-    85  0391 20e4ff                 jsr $ffe4
-    86  0394 f0fb                   beq pause_page
-    87  0396 68                     pla
-    88  0397 a8                     tay
-    89                          nopage:
-    90  0398 c8                     iny
-    91  0399 d0cf                   bne string_loop
-    92                          next_line:
-    93  039b a5fd                   lda $fd
-    94  039d 85fb                   sta $fb
-    95  039f a5fe                   lda $fe
-    96  03a1 85fc                   sta $fc
-    97  03a3 a000                   ldy #$00
-    98  03a5 f0a1                   beq program_loop
-    99                          strings_exit:
-   100  03a7 a90d                   lda #$0d ; carriage return
-   101  03a9 4cd2ff                 jmp $ffd2
+    67  0372 d006                   bne +
+    68  0374 20b703                 jsr check_newline
+    69  0377 4c9503                 jmp next_line
+    70  037a c922               +   cmp #34 ; quote
+    71  037c d006                   bne +
+    72  037e 20b703                 jsr check_newline
+    73  0381 4c5703                 jmp line_loop
+    74  0384 20d2ff             +   jsr $ffd2
+    75  0387 a5d3                   lda $d3 ; cursor column
+    76  0389 f004                   beq +
+    77  038b c928                   cmp #40 ; cursor column
+    78  038d d003                   bne ++
+    79  038f 20a103             +   jsr check_pause
+    80  0392 c8                 ++  iny
+    81  0393 d0d5                   bne string_loop
+    82                          next_line:
+    83  0395 a5fd                   lda $fd
+    84  0397 85fb                   sta $fb
+    85  0399 a5fe                   lda $fe
+    86  039b 85fc                   sta $fc
+    87  039d a000                   ldy #$00
+    88  039f f0a7                   beq program_loop
+    89                          strings_exit:
+    90                              ; fall through check_pause then will exit program
+    91                          
+    92                          check_pause:
+    93  03a1 e6ff                   inc $ff
+    94  03a3 a5ff                   lda $ff
+    95  03a5 c918                   cmp #24 ; lines on screen minus one
+    96  03a7 900d                   bcc +
+    97  03a9 a900                   lda #$00
+    98  03ab 85ff                   sta $ff ; reset lines displayed
+    99  03ad 98                     tya
+   100  03ae 48                     pha
+   101                          pause_page:
+   102  03af 20e4ff                 jsr $ffe4
+   103  03b2 f0fb                   beq pause_page
+   104  03b4 68                     pla
+   105  03b5 a8                     tay
+   106  03b6 60                 +   rts
+   107                          
+   108                          check_newline:
+   109  03b7 ea                     nop ; replace with rts to disable feature (revert to compact functionality)
+   110  03b8 a5d3                   lda $d3 ; cursor column
+   111  03ba f012                   beq +
+   112  03bc c928                   cmp #40
+   113  03be f00e                   beq +
+   114  03c0 a5c7                   lda $c7 ; get reverse
+   115  03c2 48                     pha
+   116  03c3 a90d                   lda #$0d
+   117  03c5 20d2ff                 jsr $ffd2
+   118  03c8 68                     pla
+   119  03c9 85c7                   sta $c7 ; restore reverse
+   120  03cb 20a103                 jsr check_pause
+   121  03ce 60                 +   rts

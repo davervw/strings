@@ -1,11 +1,11 @@
-	nopage	= $398	; ?
-	pause_page	= $391
+	pause_page	= $3af
 	program_loop	= $348
 	strings	= $33c	; unused
 	line_loop	= $357
+	check_newline	= $3b7	; ?
 	find_string	= $358
-	strings_exit	= $3a7	; ?
-	next_line	= $39b	; ?
+	strings_exit	= $3a1	; ?
+	next_line	= $395	; ?
 	string_loop	= $36a
-	check_pause	= $383	; ?
+	check_pause	= $3a1	; ?
 	found_string	= $363	; ?

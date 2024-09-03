@@ -44,7 +44,7 @@ program_loop:
     sta $fe
     ora $fd
     beq strings_exit
-    ldy #$03
+    ldy #$03 ; nearly advance past pointer and line number
 line_loop:
     iny
 find_string:
@@ -54,7 +54,7 @@ find_string:
     beq found_string
     iny
     bne find_string
-found_string
+found_string:
     lda $c7 ; get reverse
     eor #18 ; toggle
     sta $c7 ; store reverse
@@ -64,30 +64,20 @@ string_loop:
     sta $d4 ; quote mode on
     sta $d8 ; inserts
     lda ($fb),y ; get token
-    beq next_line
-    cmp #34 ; quote
-    beq line_loop
-    jsr $ffd2
+    bne +
+    jsr check_newline
+    jmp next_line
++   cmp #34 ; quote
+    bne +
+    jsr check_newline
+    jmp line_loop
++   jsr $ffd2
     lda $d3 ; cursor column
-    beq check_pause
+    beq +
     cmp #40 ; cursor column
-    bne nopage
-check_pause:
-    inc $ff
-    lda $ff
-    cmp #24 ; lines on screen minus one
-    bne nopage
-    lda #$00
-    sta $ff ; reset lines displayed
-    tya
-    pha
-pause_page:
-    jsr $ffe4
-    beq pause_page
-    pla
-    tay
-nopage:
-    iny
+    bne ++
++   jsr check_pause
+++  iny
     bne string_loop
 next_line:
     lda $fd
@@ -97,5 +87,35 @@ next_line:
     ldy #$00
     beq program_loop
 strings_exit:
-    lda #$0d ; carriage return
-    jmp $ffd2
+    ; fall through check_pause then will exit program
+
+check_pause:
+    inc $ff
+    lda $ff
+    cmp #24 ; lines on screen minus one
+    bcc +
+    lda #$00
+    sta $ff ; reset lines displayed
+    tya
+    pha
+pause_page:
+    jsr $ffe4
+    beq pause_page
+    pla
+    tay
++   rts
+
+check_newline:
+    nop ; replace with rts to disable feature (revert to compact functionality)
+    lda $d3 ; cursor column
+    beq +
+    cmp #40
+    beq +
+    lda $c7 ; get reverse
+    pha
+    lda #$0d
+    jsr $ffd2
+    pla
+    sta $c7 ; restore reverse
+    jsr check_pause
++   rts
