@@ -1,0 +1,104 @@
+
+; ******** Source: strings.asm
+     1                          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     2                          ;; strings for C64 - display string constants in BASIC program and/or dir listing
+     3                          ;; Copyright (c) 2024 by David R. Van Wagner
+     4                          ;; davevw.com
+     5                          ;; MIT LICENSE
+     6                          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     7                          ;; MIT License
+     8                          ;;
+     9                          ;; Copyright (c) 2024 David R. Van Wagner
+    10                          ;; davevw.com
+    11                          ;;
+    12                          ;; Permission is hereby granted, free of charge, to any person obtaining a copy
+    13                          ;; of this software and associated documentation files (the "Software"), to deal
+    14                          ;; in the Software without restriction, including without limitation the rights
+    15                          ;; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    16                          ;; copies of the Software, and to permit persons to whom the Software is
+    17                          ;; furnished to do so, subject to the following conditions:
+    18                          ;;
+    19                          ;; The above copyright notice and this permission notice shall be included in all
+    20                          ;; copies or substantial portions of the Software.
+    21                          ;;
+    22                          ;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    23                          ;; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    24                          ;; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    25                          ;; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    26                          ;; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    27                          ;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    28                          ;; SOFTWARE.
+    29                          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    30                          
+    31                          
+    32                          *=$033c
+    33                          strings:
+    34  033c a52b                   lda $2b
+    35  033e 85fb                   sta $fb
+    36  0340 a52c                   lda $2c
+    37  0342 85fc                   sta $fc
+    38  0344 a000                   ldy #$00
+    39  0346 84ff                   sty $ff
+    40                          program_loop:
+    41  0348 b1fb                   lda ($fb),y
+    42  034a c8                     iny
+    43  034b 85fd                   sta $fd
+    44  034d b1fb                   lda ($fb),y
+    45  034f 85fe                   sta $fe
+    46  0351 05fd                   ora $fd
+    47  0353 f052                   beq strings_exit
+    48  0355 a003                   ldy #$03
+    49                          line_loop:
+    50  0357 c8                     iny
+    51                          find_string:
+    52  0358 b1fb                   lda ($fb),y
+    53  035a f03f                   beq next_line
+    54  035c c922                   cmp #$22
+    55  035e f003                   beq found_string
+    56  0360 c8                     iny
+    57  0361 d0f5                   bne find_string
+    58                          found_string
+    59  0363 a5c7                   lda $c7
+    60  0365 4912                   eor #$12
+    61  0367 85c7                   sta $c7
+    62  0369 c8                     iny
+    63                          string_loop:
+    64  036a a901                   lda #$01
+    65  036c 85d4                   sta $d4
+    66  036e 85d8                   sta $d8
+    67  0370 b1fb                   lda ($fb),y
+    68  0372 f027                   beq next_line
+    69  0374 c922                   cmp #$22
+    70  0376 f0df                   beq line_loop
+    71  0378 20d2ff                 jsr $ffd2
+    72  037b a5d3                   lda $d3
+    73  037d f004                   beq check_pause
+    74  037f c928                   cmp #$28
+    75  0381 d015                   bne nopage
+    76                          check_pause:
+    77  0383 e6ff                   inc $ff
+    78  0385 a5ff                   lda $ff
+    79  0387 c918                   cmp #$18
+    80  0389 d00d                   bne nopage
+    81  038b a900                   lda #$00
+    82  038d 85ff                   sta $ff
+    83  038f 98                     tya
+    84  0390 48                     pha
+    85                          pause_page:
+    86  0391 20e4ff                 jsr $ffe4
+    87  0394 f0fb                   beq pause_page
+    88  0396 68                     pla
+    89  0397 a8                     tay
+    90                          nopage:
+    91  0398 c8                     iny
+    92  0399 d0cf                   bne string_loop
+    93                          next_line:
+    94  039b a5fd                   lda $fd
+    95  039d 85fb                   sta $fb
+    96  039f a5fe                   lda $fe
+    97  03a1 85fc                   sta $fc
+    98  03a3 a000                   ldy #$00
+    99  03a5 f0a1                   beq program_loop
+   100                          strings_exit:
+   101  03a7 a90d                   lda #$0d
+   102  03a9 4cd2ff                 jmp $ffd2
