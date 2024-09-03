@@ -28,20 +28,19 @@
 ;; SOFTWARE.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
 *=$033c
 strings:
-    lda $2b
+    lda $2b ; program start (lo)
     sta $fb
-    lda $2c
+    lda $2c ; program start (hi)
     sta $fc
     ldy #$00
-    sty $ff
+    sty $ff ; clear count of lines displayed
 program_loop:
-    lda ($fb),y
+    lda ($fb),y ; next line ptr (lo)
     iny
     sta $fd
-    lda ($fb),y
+    lda ($fb),y ; next line ptr (hi)
     sta $fe
     ora $fd
     beq strings_exit
@@ -49,37 +48,37 @@ program_loop:
 line_loop:
     iny
 find_string:
-    lda ($fb),y
+    lda ($fb),y ; get token
     beq next_line
-    cmp #$22
+    cmp #34 ; quote
     beq found_string
     iny
     bne find_string
 found_string
-    lda $c7
-    eor #$12
-    sta $c7
+    lda $c7 ; get reverse
+    eor #18 ; toggle
+    sta $c7 ; store reverse
     iny
 string_loop:
     lda #$01
-    sta $d4
-    sta $d8
-    lda ($fb),y
+    sta $d4 ; quote mode on
+    sta $d8 ; inserts
+    lda ($fb),y ; get token
     beq next_line
-    cmp #$22
+    cmp #34 ; quote
     beq line_loop
     jsr $ffd2
-    lda $d3
+    lda $d3 ; cursor column
     beq check_pause
-    cmp #$28
+    cmp #40 ; cursor column
     bne nopage
 check_pause:
     inc $ff
     lda $ff
-    cmp #$18
+    cmp #24 ; lines on screen minus one
     bne nopage
     lda #$00
-    sta $ff
+    sta $ff ; reset lines displayed
     tya
     pha
 pause_page:
@@ -98,5 +97,5 @@ next_line:
     ldy #$00
     beq program_loop
 strings_exit:
-    lda #$0d
+    lda #$0d ; carriage return
     jmp $ffd2

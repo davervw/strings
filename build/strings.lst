@@ -30,75 +30,74 @@
     28                          ;; SOFTWARE.
     29                          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     30                          
-    31                          
-    32                          *=$033c
-    33                          strings:
-    34  033c a52b                   lda $2b
-    35  033e 85fb                   sta $fb
-    36  0340 a52c                   lda $2c
-    37  0342 85fc                   sta $fc
-    38  0344 a000                   ldy #$00
-    39  0346 84ff                   sty $ff
-    40                          program_loop:
-    41  0348 b1fb                   lda ($fb),y
-    42  034a c8                     iny
-    43  034b 85fd                   sta $fd
-    44  034d b1fb                   lda ($fb),y
-    45  034f 85fe                   sta $fe
-    46  0351 05fd                   ora $fd
-    47  0353 f052                   beq strings_exit
-    48  0355 a003                   ldy #$03
-    49                          line_loop:
-    50  0357 c8                     iny
-    51                          find_string:
-    52  0358 b1fb                   lda ($fb),y
-    53  035a f03f                   beq next_line
-    54  035c c922                   cmp #$22
-    55  035e f003                   beq found_string
-    56  0360 c8                     iny
-    57  0361 d0f5                   bne find_string
-    58                          found_string
-    59  0363 a5c7                   lda $c7
-    60  0365 4912                   eor #$12
-    61  0367 85c7                   sta $c7
-    62  0369 c8                     iny
-    63                          string_loop:
-    64  036a a901                   lda #$01
-    65  036c 85d4                   sta $d4
-    66  036e 85d8                   sta $d8
-    67  0370 b1fb                   lda ($fb),y
-    68  0372 f027                   beq next_line
-    69  0374 c922                   cmp #$22
-    70  0376 f0df                   beq line_loop
-    71  0378 20d2ff                 jsr $ffd2
-    72  037b a5d3                   lda $d3
-    73  037d f004                   beq check_pause
-    74  037f c928                   cmp #$28
-    75  0381 d015                   bne nopage
-    76                          check_pause:
-    77  0383 e6ff                   inc $ff
-    78  0385 a5ff                   lda $ff
-    79  0387 c918                   cmp #$18
-    80  0389 d00d                   bne nopage
-    81  038b a900                   lda #$00
-    82  038d 85ff                   sta $ff
-    83  038f 98                     tya
-    84  0390 48                     pha
-    85                          pause_page:
-    86  0391 20e4ff                 jsr $ffe4
-    87  0394 f0fb                   beq pause_page
-    88  0396 68                     pla
-    89  0397 a8                     tay
-    90                          nopage:
-    91  0398 c8                     iny
-    92  0399 d0cf                   bne string_loop
-    93                          next_line:
-    94  039b a5fd                   lda $fd
-    95  039d 85fb                   sta $fb
-    96  039f a5fe                   lda $fe
-    97  03a1 85fc                   sta $fc
-    98  03a3 a000                   ldy #$00
-    99  03a5 f0a1                   beq program_loop
-   100                          strings_exit:
-   101  03a7 a90d                   lda #$0d
-   102  03a9 4cd2ff                 jmp $ffd2
+    31                          *=$033c
+    32                          strings:
+    33  033c a52b                   lda $2b ; program start (lo)
+    34  033e 85fb                   sta $fb
+    35  0340 a52c                   lda $2c ; program start (hi)
+    36  0342 85fc                   sta $fc
+    37  0344 a000                   ldy #$00
+    38  0346 84ff                   sty $ff ; clear count of lines displayed
+    39                          program_loop:
+    40  0348 b1fb                   lda ($fb),y ; next line ptr (lo)
+    41  034a c8                     iny
+    42  034b 85fd                   sta $fd
+    43  034d b1fb                   lda ($fb),y ; next line ptr (hi)
+    44  034f 85fe                   sta $fe
+    45  0351 05fd                   ora $fd
+    46  0353 f052                   beq strings_exit
+    47  0355 a003                   ldy #$03
+    48                          line_loop:
+    49  0357 c8                     iny
+    50                          find_string:
+    51  0358 b1fb                   lda ($fb),y ; get token
+    52  035a f03f                   beq next_line
+    53  035c c922                   cmp #34 ; quote
+    54  035e f003                   beq found_string
+    55  0360 c8                     iny
+    56  0361 d0f5                   bne find_string
+    57                          found_string
+    58  0363 a5c7                   lda $c7 ; get reverse
+    59  0365 4912                   eor #18 ; toggle
+    60  0367 85c7                   sta $c7 ; store reverse
+    61  0369 c8                     iny
+    62                          string_loop:
+    63  036a a901                   lda #$01
+    64  036c 85d4                   sta $d4 ; quote mode on
+    65  036e 85d8                   sta $d8 ; inserts
+    66  0370 b1fb                   lda ($fb),y ; get token
+    67  0372 f027                   beq next_line
+    68  0374 c922                   cmp #34 ; quote
+    69  0376 f0df                   beq line_loop
+    70  0378 20d2ff                 jsr $ffd2
+    71  037b a5d3                   lda $d3 ; cursor column
+    72  037d f004                   beq check_pause
+    73  037f c928                   cmp #40 ; cursor column
+    74  0381 d015                   bne nopage
+    75                          check_pause:
+    76  0383 e6ff                   inc $ff
+    77  0385 a5ff                   lda $ff
+    78  0387 c918                   cmp #24 ; lines on screen minus one
+    79  0389 d00d                   bne nopage
+    80  038b a900                   lda #$00
+    81  038d 85ff                   sta $ff ; reset lines displayed
+    82  038f 98                     tya
+    83  0390 48                     pha
+    84                          pause_page:
+    85  0391 20e4ff                 jsr $ffe4
+    86  0394 f0fb                   beq pause_page
+    87  0396 68                     pla
+    88  0397 a8                     tay
+    89                          nopage:
+    90  0398 c8                     iny
+    91  0399 d0cf                   bne string_loop
+    92                          next_line:
+    93  039b a5fd                   lda $fd
+    94  039d 85fb                   sta $fb
+    95  039f a5fe                   lda $fe
+    96  03a1 85fc                   sta $fc
+    97  03a3 a000                   ldy #$00
+    98  03a5 f0a1                   beq program_loop
+    99                          strings_exit:
+   100  03a7 a90d                   lda #$0d ; carriage return
+   101  03a9 4cd2ff                 jmp $ffd2
