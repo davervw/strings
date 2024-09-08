@@ -15,6 +15,6 @@ strings:
 compact:
 ![compact_dir](media/compact_dir.png)
 
-hint: see comment about nop at label check_newline for changing functionality to compact (check address if source has changed):
+hint: see comment about nop at label check_newline for changing functionality to compact (check address if source has changed, use value 96 [RTS] for compact,and value 234 [NOP] for one string per line):
 
     POKE 951, 96
